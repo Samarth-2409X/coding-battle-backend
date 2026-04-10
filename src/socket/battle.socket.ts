@@ -5,7 +5,7 @@ import Problem from "../models/Problem";
 import User from "../models/User";
 import Submission from "../models/Submission";
 import { runAgainstTestCases, LANGUAGE_IDS } from "../services/judge.service";
-import { JwtPayload, SubmissionStatus } from "../types";
+import { JwtPayload, SubmissionStatus, LanguageId } from "../types";
 
 // ─── Authenticate socket via JWT in handshake ─────────────────
 const authenticateSocket = (socket: Socket): JwtPayload | null => {
@@ -209,17 +209,17 @@ export const initializeSocket = (io: Server): void => {
 
           // Save submission to DB
           await Submission.create({
-            userId: user.userId,
+            userId: user.userId as any,
             problemId: problem._id,
             battleRoomId: room._id,
             code,
             language,
-            languageId,
+            languageId: languageId as LanguageId,
             status,
             testResults,
             passedTestCases,
             totalTestCases: problem.testCases.length,
-          });
+        });
 
           // Update player status in room
           await BattleRoom.updateOne(

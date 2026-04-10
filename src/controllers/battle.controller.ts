@@ -41,7 +41,7 @@ export const createRoom = async (req: Request, res: Response): Promise<void> => 
 export const getRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const room = await BattleRoom.findOne({
-      roomCode: req.params.roomCode.toUpperCase(),
+      roomCode: (req.params.roomCode as string).toUpperCase(),
     }).populate("problem", "title difficulty description examples starterCode constraints");
 
     if (!room) {

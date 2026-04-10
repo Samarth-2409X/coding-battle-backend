@@ -3,6 +3,7 @@ import { z } from "zod";
 import Submission from "../models/Submission";
 import Problem from "../models/Problem";
 import { runAgainstTestCases, LANGUAGE_IDS } from "../services/judge.service";
+import { LanguageId } from "../types";
 
 // ─── Zod Schema ───────────────────────────────────────────────
 export const submitCodeSchema = z.object({
@@ -24,7 +25,8 @@ export const submitCode = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const languageId = LANGUAGE_IDS[language];
+    
+    const languageId = LANGUAGE_IDS[language] as LanguageId;
     if (!languageId) {
       res.status(400).json({ success: false, message: "Unsupported language" });
       return;
