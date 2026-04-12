@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import Problem from "../models/Problem";
 
-// ─── Zod Schemas ──────────────────────────────────────────────
+
 export const createProblemSchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(10),
@@ -38,7 +38,7 @@ export const createProblemSchema = z.object({
     .default([]),
 });
 
-// ─── GET /api/problems ────────────────────────────────────────
+
 export const getProblems = async (req: Request, res: Response): Promise<void> => {
   try {
     const { difficulty, tags, page = 1, limit = 20 } = req.query;
@@ -51,7 +51,7 @@ export const getProblems = async (req: Request, res: Response): Promise<void> =>
 
     const [problems, total] = await Promise.all([
       Problem.find(filter)
-        .select("-testCases -starterCode") // don't send test cases to client
+        .select("-testCases -starterCode") 
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
@@ -74,7 +74,7 @@ export const getProblems = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-// ─── GET /api/problems/:id ────────────────────────────────────
+
 export const getProblemById = async (req: Request, res: Response): Promise<void> => {
   try {
     const problem = await Problem.findById(req.params.id)
@@ -86,7 +86,7 @@ export const getProblemById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Only send visible (non-hidden) test cases to the client
+    
     const sanitized = {
       ...problem,
       testCases: problem.testCases.filter((tc) => !tc.isHidden),
@@ -98,7 +98,7 @@ export const getProblemById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// ─── POST /api/problems ───────────────────────────────────────
+
 export const createProblem = async (req: Request, res: Response): Promise<void> => {
   try {
     const problem = await Problem.create({
@@ -116,7 +116,7 @@ export const createProblem = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// ─── PUT /api/problems/:id ────────────────────────────────────
+
 export const updateProblem = async (req: Request, res: Response): Promise<void> => {
   try {
     const problem = await Problem.findOneAndUpdate(
@@ -136,7 +136,7 @@ export const updateProblem = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// ─── DELETE /api/problems/:id ─────────────────────────────────
+
 export const deleteProblem = async (req: Request, res: Response): Promise<void> => {
   try {
     const problem = await Problem.findOneAndUpdate(
@@ -156,7 +156,7 @@ export const deleteProblem = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// ─── GET /api/problems/random ─────────────────────────────────
+
 export const getRandomProblem = async (req: Request, res: Response): Promise<void> => {
   try {
     const { difficulty } = req.query;

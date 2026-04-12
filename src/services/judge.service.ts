@@ -8,7 +8,7 @@ import {
   SubmissionStatus,
 } from "../types";
 
-// ─── Judge0 Language IDs ──────────────────────────────────────
+
 export const LANGUAGE_IDS: Record<string, number> = {
   javascript: 63,
   python: 71,
@@ -25,7 +25,7 @@ const judge0Api = axios.create({
   },
 });
 
-// ─── Submit code to Judge0 and get a token ────────────────────
+
 const submitCode = async (
   payload: Judge0SubmissionRequest
 ): Promise<string> => {
@@ -36,7 +36,7 @@ const submitCode = async (
   return response.data.token;
 };
 
-// ─── Poll Judge0 until result is ready ───────────────────────
+
 const getResult = async (token: string): Promise<Judge0ResultResponse> => {
   const maxAttempts = 10;
   const delayMs = 1500;
@@ -50,7 +50,7 @@ const getResult = async (token: string): Promise<Judge0ResultResponse> => {
 
     const statusId = response.data.status.id;
 
-    // Status 1 = In Queue, Status 2 = Processing
+   
     if (statusId !== 1 && statusId !== 2) {
       return response.data;
     }
@@ -59,7 +59,7 @@ const getResult = async (token: string): Promise<Judge0ResultResponse> => {
   throw new Error("Code execution timed out");
 };
 
-// ─── Map Judge0 status ID to our status ──────────────────────
+
 const mapStatus = (statusId: number): SubmissionStatus => {
   switch (statusId) {
     case 3: return "accepted";
@@ -76,7 +76,7 @@ const mapStatus = (statusId: number): SubmissionStatus => {
   }
 };
 
-// ─── Run code against all test cases ─────────────────────────
+
 export const runAgainstTestCases = async (
   code: string,
   languageId: number,
@@ -105,7 +105,7 @@ export const runAgainstTestCases = async (
 
       const result = await getResult(token);
       const statusId = result.status.id;
-      const passed = statusId === 3; // 3 = Accepted
+      const passed = statusId === 3; 
 
       if (passed) {
         passedTestCases++;
@@ -114,7 +114,7 @@ export const runAgainstTestCases = async (
       }
 
       if (result.time) {
-        totalTime += parseFloat(result.time) * 1000; // convert to ms
+        totalTime += parseFloat(result.time) * 1000; 
       }
 
       testResults.push({
@@ -138,7 +138,7 @@ export const runAgainstTestCases = async (
     }
   }
 
-  // If all passed, status is accepted
+  
   if (passedTestCases === testCases.length) {
     finalStatus = "accepted";
   }

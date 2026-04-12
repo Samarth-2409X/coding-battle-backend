@@ -5,7 +5,7 @@ import Problem from "../models/Problem";
 import { runAgainstTestCases, LANGUAGE_IDS } from "../services/judge.service";
 import { LanguageId } from "../types";
 
-// ─── Zod Schema ───────────────────────────────────────────────
+
 export const submitCodeSchema = z.object({
   problemId: z.string().min(1, "Problem ID required"),
   code: z.string().min(1, "Code cannot be empty"),
@@ -13,12 +13,12 @@ export const submitCodeSchema = z.object({
   battleRoomId: z.string().optional(),
 });
 
-// ─── POST /api/submissions ────────────────────────────────────
+
 export const submitCode = async (req: Request, res: Response): Promise<void> => {
   try {
     const { problemId, code, language, battleRoomId } = req.body;
 
-    // 1. Find problem with ALL test cases (including hidden)
+    
     const problem = await Problem.findById(problemId);
     if (!problem) {
       res.status(404).json({ success: false, message: "Problem not found" });
@@ -32,7 +32,7 @@ export const submitCode = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // 2. Create submission record as pending
+    
     const submission = await Submission.create({
       userId: req.user?.userId,
       problemId,
@@ -44,11 +44,11 @@ export const submitCode = async (req: Request, res: Response): Promise<void> => 
       totalTestCases: problem.testCases.length,
     });
 
-    // 3. Run against all test cases via Judge0
+    
     const { testResults, passedTestCases, status, executionTime } =
       await runAgainstTestCases(code, languageId, problem.testCases);
 
-    // 4. Update submission with results
+    
     submission.status = status;
     submission.testResults = testResults;
     submission.passedTestCases = passedTestCases;
@@ -74,7 +74,7 @@ export const submitCode = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// ─── GET /api/submissions/my ──────────────────────────────────
+
 export const getMySubmissions = async (req: Request, res: Response): Promise<void> => {
   try {
     const { problemId } = req.query;
@@ -83,7 +83,7 @@ export const getMySubmissions = async (req: Request, res: Response): Promise<voi
 
     const submissions = await Submission.find(filter)
       .populate("problemId", "title difficulty")
-      .select("-code -testResults") // lightweight for list view
+      .select("-code -testResults") 
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -93,7 +93,7 @@ export const getMySubmissions = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// ─── GET /api/submissions/:id ─────────────────────────────────
+
 export const getSubmissionById = async (req: Request, res: Response): Promise<void> => {
   try {
     const submission = await Submission.findOne({

@@ -10,7 +10,7 @@ import { validate } from "../middleware/validate";
 
 const router = Router();
 
-// All submission routes are protected
+
 router.use(protect);
 
 router.post("/", validate(submitCodeSchema), submitCode);

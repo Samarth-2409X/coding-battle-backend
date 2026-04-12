@@ -72,7 +72,7 @@ const problemSchema = new Schema<IProblem>(
   }
 );
 
-// ─── Index for fast filtering ─────────────────────────────────
+
 problemSchema.index({ difficulty: 1, isActive: 1 });
 problemSchema.index({ tags: 1 });
 

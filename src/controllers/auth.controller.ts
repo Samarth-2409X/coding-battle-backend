@@ -3,7 +3,7 @@ import { z } from "zod";
 import User from "../models/User";
 import { generateToken } from "../middleware/auth";
 
-// ─── Zod Schemas ──────────────────────────────────────────────
+
 export const registerSchema = z.object({
   username: z
     .string()
@@ -19,7 +19,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// ─── POST /api/auth/register ──────────────────────────────────
+
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, email, password } = req.body;
@@ -66,12 +66,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// ─── POST /api/auth/login ─────────────────────────────────────
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    // Include password field (it's hidden by default via select: false)
+    
     const user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.comparePassword(password))) {
@@ -107,7 +107,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// ─── GET /api/auth/me ─────────────────────────────────────────
+
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.user?.userId);
@@ -126,7 +126,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// ─── GET /api/auth/leaderboard ────────────────────────────────
+
 export const getLeaderboard = async (_req: Request, res: Response): Promise<void> => {
   try {
     const users = await User.find()

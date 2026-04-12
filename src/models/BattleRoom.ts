@@ -55,7 +55,7 @@ const battleRoomSchema = new Schema<IBattleRoom>(
     },
     timeLimit: {
       type: Number,
-      default: 30, // 30 minutes
+      default: 30,
     },
     startedAt: { type: Date },
     finishedAt: { type: Date },
@@ -71,11 +71,11 @@ const battleRoomSchema = new Schema<IBattleRoom>(
   }
 );
 
-// ─── Auto-expire finished rooms after 24 hours ────────────────
+
 battleRoomSchema.index({ finishedAt: 1 }, { expireAfterSeconds: 86400 });
 battleRoomSchema.index({ status: 1, createdAt: -1 });
 
-// ─── Generate a unique 6-char room code ───────────────────────
+
 battleRoomSchema.statics.generateRoomCode = function (): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";

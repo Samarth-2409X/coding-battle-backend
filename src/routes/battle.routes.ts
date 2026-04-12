@@ -9,7 +9,7 @@ import { protect } from "../middleware/auth";
 
 const router = Router();
 
-// Protected routes — all battle actions require login
+
 router.use(protect);
 
 router.post("/create", createRoom);

@@ -10,7 +10,7 @@ const connectDB = async (): Promise<void> => {
 
     const conn = await mongoose.connect(mongoUri);
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
 
     mongoose.connection.on("error", (err) => {
       console.error("MongoDB connection error:", err);
@@ -20,7 +20,7 @@ const connectDB = async (): Promise<void> => {
       console.warn("MongoDB disconnected. Attempting to reconnect...");
     });
   } catch (error) {
-    console.error("❌ MongoDB connection failed:", error);
+    console.error("MongoDB connection failed:", error);
     process.exit(1);
   }
 };

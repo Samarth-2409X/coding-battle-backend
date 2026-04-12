@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, // never return password in queries by default
+      select: false, 
     },
     avatar: {
       type: String,
@@ -36,7 +36,7 @@ const userSchema = new Schema<IUser>(
       wins: { type: Number, default: 0 },
       losses: { type: Number, default: 0 },
       rank: { type: Number, default: 0 },
-      rating: { type: Number, default: 1000 }, // ELO-style starting rating
+      rating: { type: Number, default: 1000 },
     },
   },
   {
@@ -44,21 +44,21 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// ─── Hash password before saving ─────────────────────────────
+
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// ─── Instance method: compare passwords ──────────────────────
+
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// ─── Remove password from JSON output ────────────────────────
+
 userSchema.set("toJSON", {
   transform: (_doc, ret) => {
     delete (ret as any).password;

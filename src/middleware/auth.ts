@@ -8,7 +8,7 @@ export const protect = (
   next: NextFunction
 ): void => {
   try {
-    // 1. Get token from header
+    
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -21,13 +21,13 @@ export const protect = (
 
     const token = authHeader.split(" ")[1];
 
-    // 2. Verify token
+    
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET not configured");
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
 
-    // 3. Attach user to request
+   
     req.user = decoded;
     next();
   } catch (error) {
@@ -43,7 +43,7 @@ export const protect = (
   }
 };
 
-// ─── Helper: generate JWT ────────────────────────────────────
+
 export const generateToken = (payload: JwtPayload): string => {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET not configured");

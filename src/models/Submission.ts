@@ -65,7 +65,7 @@ const submissionSchema = new Schema<ISubmission>(
   }
 );
 
-// ─── Indexes for leaderboard / user history ───────────────────
+
 submissionSchema.index({ userId: 1, createdAt: -1 });
 submissionSchema.index({ problemId: 1, status: 1 });
 submissionSchema.index({ battleRoomId: 1 });

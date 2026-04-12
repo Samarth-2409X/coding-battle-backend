@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import BattleRoom from "../models/BattleRoom";
 import Problem from "../models/Problem";
 
-// ─── POST /api/battles/create ─────────────────────────────────
+
 export const createRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const { mode = "1v1", timeLimit = 30 } = req.body;
 
-    // Generate unique room code
+    
     let roomCode = "";
     let isUnique = false;
     while (!isUnique) {
@@ -37,7 +37,7 @@ export const createRoom = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// ─── GET /api/battles/:roomCode ───────────────────────────────
+
 export const getRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const room = await BattleRoom.findOne({
@@ -55,7 +55,7 @@ export const getRoom = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// ─── GET /api/battles ─────────────────────────────────────────
+
 export const getActiveRooms = async (_req: Request, res: Response): Promise<void> => {
   try {
     const rooms = await BattleRoom.find({ status: "waiting" })
@@ -69,7 +69,7 @@ export const getActiveRooms = async (_req: Request, res: Response): Promise<void
   }
 };
 
-// ─── GET /api/battles/history ─────────────────────────────────
+
 export const getBattleHistory = async (req: Request, res: Response): Promise<void> => {
   try {
     const rooms = await BattleRoom.find({
@@ -77,7 +77,7 @@ export const getBattleHistory = async (req: Request, res: Response): Promise<voi
       status: "finished",
     })
       .populate("problem", "title difficulty")
-      .select("-players.code") // don't expose other players code
+      .select("-players.code") 
       .sort({ finishedAt: -1 })
       .limit(20);
 
