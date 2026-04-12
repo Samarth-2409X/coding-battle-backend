@@ -7,7 +7,7 @@ import Submission from "../models/Submission";
 import { runAgainstTestCases, LANGUAGE_IDS } from "../services/judge.service";
 import { JwtPayload, SubmissionStatus, LanguageId } from "../types";
 
-// ─── Authenticate socket via JWT in handshake ─────────────────
+
 const authenticateSocket = (socket: Socket): JwtPayload | null => {
   try {
     const token =
@@ -23,9 +23,9 @@ const authenticateSocket = (socket: Socket): JwtPayload | null => {
   }
 };
 
-// ─── Main socket handler ──────────────────────────────────────
+
 export const initializeSocket = (io: Server): void => {
-  // ── Auth middleware for every socket connection ──
+  
   io.use((socket, next) => {
     const user = authenticateSocket(socket);
     if (!user) {
@@ -39,7 +39,7 @@ export const initializeSocket = (io: Server): void => {
     const user = (socket as any).user as JwtPayload;
     console.log(`🔌 User connected: ${user.username} (${socket.id})`);
 
-    // ── JOIN ROOM ──────────────────────────────────
+    
     socket.on("JOIN_ROOM", async ({ roomCode }: { roomCode: string }) => {
       try {
         const room = await BattleRoom.findOne({ roomCode: roomCode.toUpperCase() });
@@ -64,7 +64,7 @@ export const initializeSocket = (io: Server): void => {
             return;
           }
 
-          // Add player to room
+          
           room.players.push({
             userId: user.userId as any,
             username: user.username,
@@ -78,13 +78,13 @@ export const initializeSocket = (io: Server): void => {
 
           await room.save();
 
-          // Notify all players in room
+          
           io.to(roomCode).emit("PLAYER_JOINED", {
             userId: user.userId,
             username: user.username,
           });
         } else {
-          // Reconnecting — update socket ID
+         
           alreadyInRoom.socketId = socket.id;
           await room.save();
         }
@@ -92,7 +92,7 @@ export const initializeSocket = (io: Server): void => {
         socket.join(roomCode);
         (socket as any).currentRoom = roomCode;
 
-        // Send updated room state to joining player
+        
         const populatedRoom = await BattleRoom.findOne({ roomCode })
           .populate("problem", "title difficulty description examples starterCode constraints");
 
@@ -104,7 +104,7 @@ export const initializeSocket = (io: Server): void => {
       }
     });
 
-    // ── PLAYER READY ───────────────────────────────
+    
     socket.on("PLAYER_READY", async ({ roomCode }: { roomCode: string }) => {
       try {
         const room = await BattleRoom.findOne({ roomCode });
@@ -120,7 +120,7 @@ export const initializeSocket = (io: Server): void => {
 
         io.to(roomCode).emit("ROOM_UPDATED", { room });
 
-        // Check if all players are ready (min 2 players)
+        
         const allReady =
           room.players.length >= 2 &&
           room.players.every((p) => p.isReady);
@@ -133,7 +133,7 @@ export const initializeSocket = (io: Server): void => {
       }
     });
 
-    // ── CODE CHANGE (live broadcast to opponent) ───
+    
     socket.on(
       "CODE_CHANGE",
       async ({
@@ -146,7 +146,7 @@ export const initializeSocket = (io: Server): void => {
         language: string;
       }) => {
         try {
-          // Save latest code to DB (for reconnect recovery)
+         
           await BattleRoom.updateOne(
             { roomCode, "players.userId": user.userId },
             {
@@ -157,18 +157,18 @@ export const initializeSocket = (io: Server): void => {
             }
           );
 
-          // Broadcast to everyone else in the room (not the sender)
+          
           socket.to(roomCode).emit("OPPONENT_CODE_CHANGE", {
             userId: user.userId,
             language,
           });
         } catch (error) {
-          // Silently fail — code change is high-frequency, don't block UI
+          
         }
       }
     );
 
-    // ── SUBMIT CODE ────────────────────────────────
+    
     socket.on(
       "SUBMIT_CODE",
       async ({
@@ -195,7 +195,7 @@ export const initializeSocket = (io: Server): void => {
             return;
           }
 
-          // Notify room that this player submitted
+          
           io.to(roomCode).emit("SUBMISSION_RESULT", {
             userId: user.userId,
             status: "pending" as SubmissionStatus,
@@ -203,11 +203,11 @@ export const initializeSocket = (io: Server): void => {
             total: problem.testCases.length,
           });
 
-          // Run against test cases
+          
           const { testResults, passedTestCases, status } =
             await runAgainstTestCases(code, languageId, problem.testCases);
 
-          // Save submission to DB
+          
           await Submission.create({
             userId: user.userId as any,
             problemId: problem._id,
@@ -221,7 +221,7 @@ export const initializeSocket = (io: Server): void => {
             totalTestCases: problem.testCases.length,
         });
 
-          // Update player status in room
+          
           await BattleRoom.updateOne(
             { roomCode, "players.userId": user.userId },
             {
@@ -234,7 +234,7 @@ export const initializeSocket = (io: Server): void => {
             }
           );
 
-          // Broadcast result to room
+          
           io.to(roomCode).emit("SUBMISSION_RESULT", {
             userId: user.userId,
             status,
@@ -242,7 +242,7 @@ export const initializeSocket = (io: Server): void => {
             total: problem.testCases.length,
           });
 
-          // If accepted → end battle
+          
           if (status === "accepted") {
             await endBattle(io, roomCode, user.userId, user.username);
           }
@@ -254,23 +254,23 @@ export const initializeSocket = (io: Server): void => {
       }
     );
 
-    // ── LEAVE ROOM ─────────────────────────────────
+    
     socket.on("LEAVE_ROOM", async ({ roomCode }: { roomCode: string }) => {
       await handleLeaveRoom(io, socket, user, roomCode);
     });
 
-    // ── DISCONNECT ─────────────────────────────────
+    
     socket.on("disconnect", async () => {
       const roomCode = (socket as any).currentRoom;
       if (roomCode) {
         await handleLeaveRoom(io, socket, user, roomCode);
       }
-      console.log(`🔌 User disconnected: ${user.username}`);
+      console.log(`User disconnected: ${user.username}`);
     });
   });
 };
 
-// ─── Helper: countdown then start battle ─────────────────────
+
 const startCountdown = async (io: Server, roomCode: string): Promise<void> => {
   await BattleRoom.updateOne({ roomCode }, { status: "countdown" });
 
@@ -286,13 +286,13 @@ const startCountdown = async (io: Server, roomCode: string): Promise<void> => {
   }, 1000);
 };
 
-// ─── Helper: start the actual battle ─────────────────────────
+
 const startBattle = async (io: Server, roomCode: string): Promise<void> => {
   try {
     const room = await BattleRoom.findOne({ roomCode });
     if (!room) return;
 
-    // Pick a random active problem
+    
     const count = await Problem.countDocuments({ isActive: true });
     const random = Math.floor(Math.random() * count);
     const problem = await Problem.findOne({ isActive: true }).skip(random);
@@ -325,7 +325,7 @@ const startBattle = async (io: Server, roomCode: string): Promise<void> => {
       timeLimit: room.timeLimit,
     });
 
-    // Set a server-side timer to end battle when time runs out
+    
     setTimeout(async () => {
       const currentRoom = await BattleRoom.findOne({ roomCode });
       if (currentRoom && currentRoom.status === "active") {
@@ -338,7 +338,7 @@ const startBattle = async (io: Server, roomCode: string): Promise<void> => {
   }
 };
 
-// ─── Helper: end battle with a winner ────────────────────────
+
 const endBattle = async (
   io: Server,
   roomCode: string,
@@ -355,7 +355,7 @@ const endBattle = async (
       }
     );
 
-    // Update winner/loser stats
+    
     const room = await BattleRoom.findOne({ roomCode });
     if (room) {
       for (const player of room.players) {
@@ -380,13 +380,13 @@ const endBattle = async (
   }
 };
 
-// ─── Helper: force-end battle on time expiry ─────────────────
+
 const forceEndBattle = async (io: Server, roomCode: string): Promise<void> => {
   try {
     const room = await BattleRoom.findOne({ roomCode });
     if (!room) return;
 
-    // Find player with highest score
+   
     const sorted = [...room.players].sort((a, b) => b.score - a.score);
     const winner = sorted[0];
 
@@ -404,7 +404,7 @@ const forceEndBattle = async (io: Server, roomCode: string): Promise<void> => {
   }
 };
 
-// ─── Helper: leave room logic ─────────────────────────────────
+
 const handleLeaveRoom = async (
   io: Server,
   socket: Socket,
@@ -417,13 +417,13 @@ const handleLeaveRoom = async (
     const room = await BattleRoom.findOne({ roomCode });
     if (!room || room.status === "finished") return;
 
-    // Remove player from room
+    
     room.players = room.players.filter(
       (p) => p.userId.toString() !== user.userId
     );
 
     if (room.players.length === 0) {
-      // Empty room — delete it
+      
       await BattleRoom.deleteOne({ roomCode });
     } else {
       await room.save();
