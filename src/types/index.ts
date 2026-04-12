@@ -1,6 +1,6 @@
 import { Document, Types } from "mongoose";
 
-// ─── User Types ───────────────────────────────────────────────
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   username: string;
@@ -19,7 +19,7 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-// ─── Problem Types ────────────────────────────────────────────
+
 export type Difficulty = "easy" | "medium" | "hard";
 
 export interface ITestCase {
@@ -52,7 +52,7 @@ export interface IProblem extends Document {
   createdAt: Date;
 }
 
-// ─── Battle Room Types ────────────────────────────────────────
+
 export type BattleStatus = "waiting" | "countdown" | "active" | "finished";
 export type BattleMode = "1v1" | "tournament";
 
@@ -76,7 +76,7 @@ export interface IBattleRoom extends Document {
   problem?: Types.ObjectId;
   players: IPlayer[];
   maxPlayers: number;
-  timeLimit: number; // in minutes
+  timeLimit: number; 
   startedAt?: Date;
   finishedAt?: Date;
   winnerId?: Types.ObjectId;
@@ -84,7 +84,7 @@ export interface IBattleRoom extends Document {
   createdAt: Date;
 }
 
-// ─── Submission Types ─────────────────────────────────────────
+
 export type SubmissionStatus =
   | "pending"
   | "accepted"
@@ -93,7 +93,7 @@ export type SubmissionStatus =
   | "runtime_error"
   | "compilation_error";
 
-export type LanguageId = 63 | 71 | 54 | 62; // JS | Python | C++ | Java
+export type LanguageId = 63 | 71 | 54 | 62; 
 
 export interface ITestResult {
   testCaseIndex: number;
@@ -121,14 +121,14 @@ export interface ISubmission extends Document {
   createdAt: Date;
 }
 
-// ─── JWT Payload ──────────────────────────────────────────────
+
 export interface JwtPayload {
   userId: string;
   username: string;
   email: string;
 }
 
-// ─── Express Request extension ────────────────────────────────
+
 declare global {
   namespace Express {
     interface Request {
@@ -137,7 +137,7 @@ declare global {
   }
 }
 
-// ─── Judge0 Types ─────────────────────────────────────────────
+
 export interface Judge0SubmissionRequest {
   source_code: string;
   language_id: number;
@@ -162,16 +162,16 @@ export interface Judge0ResultResponse {
   memory: number | null;
 }
 
-// ─── Socket Event Types ───────────────────────────────────────
+
 export interface SocketEvents {
-  // Client → Server
+  
   JOIN_ROOM: { roomCode: string; userId: string };
   LEAVE_ROOM: { roomCode: string };
   PLAYER_READY: { roomCode: string };
   CODE_CHANGE: { roomCode: string; code: string; language: string };
   SUBMIT_CODE: { roomCode: string; code: string; language: string; languageId: number };
 
-  // Server → Client
+  
   ROOM_UPDATED: { room: Partial<IBattleRoom> };
   BATTLE_STARTED: { problem: Partial<IProblem>; timeLimit: number };
   OPPONENT_CODE_CHANGE: { userId: string; language: string };
