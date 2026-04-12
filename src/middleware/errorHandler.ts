@@ -5,7 +5,7 @@ export interface AppError extends Error {
   isOperational?: boolean;
 }
 
-// ─── Global error handler ─────────────────────────────────────
+
 export const errorHandler = (
   err: AppError,
   _req: Request,
@@ -15,21 +15,21 @@ export const errorHandler = (
   let statusCode = err.statusCode || 500;
   let message = err.message || "Internal Server Error";
 
-  // Mongoose duplicate key error
+  
   if ((err as any).code === 11000) {
     statusCode = 400;
     const field = Object.keys((err as any).keyValue || {})[0];
     message = `${field ? field.charAt(0).toUpperCase() + field.slice(1) : "Field"} already exists`;
   }
 
-  // Mongoose validation error
+ 
   if (err.name === "ValidationError") {
     statusCode = 400;
     const errors = Object.values((err as any).errors).map((e: any) => e.message);
     message = errors.join(". ");
   }
 
-  // Mongoose cast error (invalid ObjectId)
+  
   if (err.name === "CastError") {
     statusCode = 400;
     message = "Invalid ID format";
@@ -46,7 +46,7 @@ export const errorHandler = (
   });
 };
 
-// ─── 404 handler ─────────────────────────────────────────────
+
 export const notFound = (req: Request, res: Response): void => {
   res.status(404).json({
     success: false,
