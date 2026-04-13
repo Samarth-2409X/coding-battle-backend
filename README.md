@@ -274,12 +274,7 @@ npm start        # Run the compiled production build
 
 ---
 
-## Author
+## 👨‍💻 Author
 
-**Samarth** — MERN Developer
-
----
-
-## License
-
-MIT
+**Samarth**
+GitHub: [Samarth-2409X](https://github.com/Samarth-2409X)
