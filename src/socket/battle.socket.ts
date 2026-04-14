@@ -134,19 +134,8 @@ export const initializeSocket = (io: Server): void => {
     });
 
     
-    socket.on(
-      "CODE_CHANGE",
-      async ({
-        roomCode,
-        code,
-        language,
-      }: {
-        roomCode: string;
-        code: string;
-        language: string;
-      }) => {
+    socket.on("CODE_CHANGE", async ({roomCode,code,language,}: {roomCode: string; code: string; language: string}) => {
         try {
-         
           await BattleRoom.updateOne(
             { roomCode, "players.userId": user.userId },
             {
