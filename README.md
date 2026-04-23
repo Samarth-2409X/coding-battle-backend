@@ -267,7 +267,7 @@ const socket = io("http://localhost:5000", {
 ## Scripts
 
 ```bash
-npm run dev      # Start development server with hot reload
+npm run dev      
 npm run build    # Compile TypeScript to JavaScript
 npm start        # Run the compiled production build
 ```
