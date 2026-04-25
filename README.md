@@ -269,7 +269,7 @@ const socket = io("http://localhost:5000", {
 ```bash
 npm run dev      
 npm run build   
-npm start        # Run the compiled production build
+npm start        
 ```
 
 ---
