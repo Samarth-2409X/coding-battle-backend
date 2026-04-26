@@ -26,6 +26,7 @@ const authenticateSocket = (socket: Socket): JwtPayload | null => {
 
 export const initializeSocket = (io: Server): void => {
 
+  
   io.use((socket, next) => {
     const user = authenticateSocket(socket);
     if (!user) {
@@ -38,7 +39,6 @@ export const initializeSocket = (io: Server): void => {
   io.on("connection", (socket: Socket) => {
     const user = (socket as any).user as JwtPayload;
     console.log(`🔌 User connected: ${user.username} (${socket.id})`);
-
 
     
     socket.on("JOIN_ROOM", async ({ roomCode }: { roomCode: string }) => {
@@ -71,7 +71,6 @@ export const initializeSocket = (io: Server): void => {
             {
               roomCode: upperCode,
               status: { $ne: "finished" },
-             
               $expr: { $lt: [{ $size: "$players" }, "$maxPlayers"] },
               "players.userId": { $ne: user.userId },
             },
@@ -98,9 +97,9 @@ export const initializeSocket = (io: Server): void => {
               username: user.username,
             });
           }
-          
+
         } else {
-          
+         
           await BattleRoom.updateOne(
             { roomCode: upperCode, "players.userId": user.userId },
             { $set: { "players.$.socketId": socket.id } }
@@ -110,9 +109,12 @@ export const initializeSocket = (io: Server): void => {
         socket.join(upperCode);
         (socket as any).currentRoom = upperCode;
 
-        const populatedRoom = await BattleRoom.findOne({ roomCode: upperCode }).populate(
+       
+        const populatedRoom = await BattleRoom.findOne({
+          roomCode: upperCode,
+        }).populate(
           "problem",
-          "title difficulty description examples starterCode constraints"
+          "title difficulty description examples starterCode constraints tags"
         );
 
         socket.emit("ROOM_UPDATED", { room: populatedRoom });
@@ -123,11 +125,9 @@ export const initializeSocket = (io: Server): void => {
       }
     });
 
-
     
     socket.on("PLAYER_READY", async ({ roomCode }: { roomCode: string }) => {
       try {
-        
         const result = await BattleRoom.findOneAndUpdate(
           {
             roomCode,
@@ -138,7 +138,7 @@ export const initializeSocket = (io: Server): void => {
           { new: true }
         );
 
-        if (!result) return; 
+        if (!result) return;
 
         io.to(roomCode).emit("ROOM_UPDATED", { room: result });
 
@@ -154,8 +154,7 @@ export const initializeSocket = (io: Server): void => {
       }
     });
 
-
-   
+    
     socket.on(
       "CODE_CHANGE",
       async ({
@@ -168,7 +167,6 @@ export const initializeSocket = (io: Server): void => {
         language: string;
       }) => {
         try {
-          
           await BattleRoom.updateOne(
             { roomCode, "players.userId": user.userId },
             {
@@ -179,16 +177,16 @@ export const initializeSocket = (io: Server): void => {
             }
           );
 
+         
           socket.to(roomCode).emit("OPPONENT_CODE_CHANGE", {
             userId: user.userId,
             language,
           });
         } catch (_) {
-          
+         
         }
       }
     );
-
 
     
     socket.on(
@@ -206,6 +204,7 @@ export const initializeSocket = (io: Server): void => {
       }) => {
         try {
           const room = await BattleRoom.findOne({ roomCode }).populate("problem");
+
           if (!room || room.status !== "active") {
             socket.emit("ERROR", { message: "Battle is not active" });
             return;
@@ -225,9 +224,11 @@ export const initializeSocket = (io: Server): void => {
             total: problem.testCases.length,
           });
 
+          
           const { testResults, passedTestCases, status } =
             await runAgainstTestCases(code, languageId, problem.testCases);
 
+          
           await Submission.create({
             userId: user.userId as any,
             problemId: problem._id,
@@ -254,6 +255,7 @@ export const initializeSocket = (io: Server): void => {
             }
           );
 
+          
           io.to(roomCode).emit("SUBMISSION_RESULT", {
             userId: user.userId,
             status,
@@ -261,6 +263,7 @@ export const initializeSocket = (io: Server): void => {
             total: problem.testCases.length,
           });
 
+          
           if (status === "accepted") {
             await endBattle(io, roomCode, user.userId, user.username);
           }
@@ -272,25 +275,42 @@ export const initializeSocket = (io: Server): void => {
       }
     );
 
-
     
     socket.on("LEAVE_ROOM", async ({ roomCode }: { roomCode: string }) => {
       await handleLeaveRoom(io, socket, user, roomCode);
     });
 
-
-   
+    
     socket.on("disconnect", async () => {
       const roomCode = (socket as any).currentRoom;
+      console.log(`🔌 User disconnected: ${user.username}, room: ${roomCode}`);
+
       if (roomCode) {
-        await handleLeaveRoom(io, socket, user, roomCode);
+        
+        setTimeout(async () => {
+          try {
+            const room = await BattleRoom.findOne({ roomCode });
+            if (!room) return;
+
+            const player = room.players.find(
+              (p) => p.userId.toString() === user.userId
+            );
+
+            
+            if (player && player.socketId !== socket.id) {
+              console.log(`${user.username} reconnected, skipping disconnect leave`);
+              return;
+            }
+
+            await handleLeaveRoom(io, socket, user, roomCode);
+          } catch (err) {
+            console.error("disconnect timeout error:", err);
+          }
+        }, 3000);
       }
-      console.log(`User disconnected: ${user.username}`);
     });
   });
 };
-
-
 
 
 const startCountdown = async (io: Server, roomCode: string): Promise<void> => {
@@ -320,7 +340,13 @@ const startBattle = async (io: Server, roomCode: string): Promise<void> => {
     const room = await BattleRoom.findOne({ roomCode });
     if (!room) return;
 
+    
     const count = await Problem.countDocuments({ isActive: true });
+    if (count === 0) {
+      io.to(roomCode).emit("ERROR", { message: "No problems available. Please add problems first." });
+      return;
+    }
+
     const random = Math.floor(Math.random() * count);
     const problem = await Problem.findOne({ isActive: true }).skip(random);
 
@@ -341,6 +367,7 @@ const startBattle = async (io: Server, roomCode: string): Promise<void> => {
       }
     );
 
+    
     io.to(roomCode).emit("BATTLE_STARTED", {
       problem: {
         _id: problem._id,
@@ -355,6 +382,7 @@ const startBattle = async (io: Server, roomCode: string): Promise<void> => {
       timeLimit: room.timeLimit,
     });
 
+    
     setTimeout(async () => {
       const currentRoom = await BattleRoom.findOne({ roomCode });
       if (currentRoom && currentRoom.status === "active") {
@@ -375,7 +403,6 @@ const endBattle = async (
   winnerUsername: string
 ): Promise<void> => {
   try {
-    
     const finished = await BattleRoom.findOneAndUpdate(
       { roomCode, status: "active" },
       {
@@ -388,8 +415,9 @@ const endBattle = async (
       { new: true }
     );
 
-    if (!finished) return; 
+    if (!finished) return;
 
+    
     for (const player of finished.players) {
       const isWinner = player.userId.toString() === winnerId;
       await User.updateOne(
@@ -406,6 +434,7 @@ const endBattle = async (
     }
 
     io.to(roomCode).emit("BATTLE_FINISHED", { winnerId, winnerUsername });
+
   } catch (error) {
     console.error("endBattle error:", error);
   }
@@ -417,10 +446,10 @@ const forceEndBattle = async (io: Server, roomCode: string): Promise<void> => {
     const room = await BattleRoom.findOne({ roomCode });
     if (!room || room.status !== "active") return;
 
+   
     const sorted = [...room.players].sort((a, b) => b.score - a.score);
     const winner = sorted[0];
 
-    
     const finished = await BattleRoom.findOneAndUpdate(
       { roomCode, status: "active" },
       {
@@ -433,12 +462,13 @@ const forceEndBattle = async (io: Server, roomCode: string): Promise<void> => {
       { new: true }
     );
 
-    if (!finished) return; 
+    if (!finished) return;
 
     io.to(roomCode).emit("BATTLE_FINISHED", {
       winnerId: winner?.userId?.toString() || "",
       winnerUsername: winner?.username || "Nobody",
     });
+
   } catch (error) {
     console.error("forceEndBattle error:", error);
   }
@@ -454,17 +484,46 @@ const handleLeaveRoom = async (
   try {
     socket.leave(roomCode);
 
+    const room = await BattleRoom.findOne({ roomCode });
+
     
+    if (!room || room.status === "finished") return;
+
+    
+    if (room.status === "active") {
+      await BattleRoom.updateOne(
+        { roomCode, "players.userId": user.userId },
+        { $set: { "players.$.socketId": "" } }
+      );
+      io.to(roomCode).emit("PLAYER_LEFT", {
+        userId: user.userId,
+        username: user.username,
+      });
+      return;
+    }
+
     const updated = await BattleRoom.findOneAndUpdate(
       { roomCode, status: { $ne: "finished" } },
       { $pull: { players: { userId: user.userId } } },
       { new: true }
     );
 
-    if (!updated) return; 
+    if (!updated) return;
 
     if (updated.players.length === 0) {
-      await BattleRoom.deleteOne({ roomCode });
+      
+      setTimeout(async () => {
+        const checkRoom = await BattleRoom.findOne({ roomCode });
+        if (
+          checkRoom &&
+          checkRoom.players.length === 0 &&
+          checkRoom.status === "waiting"
+        ) {
+          await BattleRoom.deleteOne({ roomCode });
+          console.log(`🗑 Room ${roomCode} deleted after 2 min timeout`);
+        }
+      }, 2 * 60 * 1000);
+
     } else {
       io.to(roomCode).emit("PLAYER_LEFT", {
         userId: user.userId,
@@ -472,6 +531,7 @@ const handleLeaveRoom = async (
       });
       io.to(roomCode).emit("ROOM_UPDATED", { room: updated });
     }
+
   } catch (error) {
     console.error("handleLeaveRoom error:", error);
   }
