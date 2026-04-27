@@ -8,7 +8,6 @@ import {
   SubmissionStatus,
 } from "../types";
 
-
 export const LANGUAGE_IDS: Record<string, number> = {
   javascript: 63,
   python: 71,
@@ -19,23 +18,21 @@ export const LANGUAGE_IDS: Record<string, number> = {
 const judge0Api = axios.create({
   baseURL: process.env.JUDGE0_API_URL,
   headers: {
-    "X-RapidAPI-Key": process.env.JUDGE0_API_KEY,
-    "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
     "Content-Type": "application/json",
   },
 });
 
-
 const submitCode = async (
   payload: Judge0SubmissionRequest
 ): Promise<string> => {
+  console.log(`Submitting to Judge0 → language_id: ${payload.language_id}, stdin: "${payload.stdin}", expected: "${payload.expected_output}"`);
   const response = await judge0Api.post<Judge0SubmissionResponse>(
     "/submissions?base64_encoded=false&wait=false",
     payload
   );
+  console.log(`Judge0 token received: ${response.data.token}`);
   return response.data.token;
 };
-
 
 const getResult = async (token: string): Promise<Judge0ResultResponse> => {
   const maxAttempts = 10;
@@ -49,16 +46,16 @@ const getResult = async (token: string): Promise<Judge0ResultResponse> => {
     );
 
     const statusId = response.data.status.id;
+    console.log(`Polling attempt ${attempt + 1} → status: ${statusId} (${response.data.status.description})`);
 
-   
     if (statusId !== 1 && statusId !== 2) {
+      console.log(`Final result → stdout: "${response.data.stdout}" | stderr: "${response.data.stderr}" | compile: "${response.data.compile_output}"`);
       return response.data;
     }
   }
 
   throw new Error("Code execution timed out");
 };
-
 
 const mapStatus = (statusId: number): SubmissionStatus => {
   switch (statusId) {
@@ -75,7 +72,6 @@ const mapStatus = (statusId: number): SubmissionStatus => {
     default: return "runtime_error";
   }
 };
-
 
 export const runAgainstTestCases = async (
   code: string,
@@ -105,7 +101,7 @@ export const runAgainstTestCases = async (
 
       const result = await getResult(token);
       const statusId = result.status.id;
-      const passed = statusId === 3; 
+      const passed = statusId === 3;
 
       if (passed) {
         passedTestCases++;
@@ -114,7 +110,7 @@ export const runAgainstTestCases = async (
       }
 
       if (result.time) {
-        totalTime += parseFloat(result.time) * 1000; 
+        totalTime += parseFloat(result.time) * 1000;
       }
 
       testResults.push({
@@ -127,6 +123,7 @@ export const runAgainstTestCases = async (
       });
 
     } catch (error) {
+      console.error(`Test case ${i} execution error:`, error);
       testResults.push({
         testCaseIndex: i,
         passed: false,
@@ -138,7 +135,6 @@ export const runAgainstTestCases = async (
     }
   }
 
-  
   if (passedTestCases === testCases.length) {
     finalStatus = "accepted";
   }
