@@ -53,7 +53,7 @@ coding-battle-backend/
 │   │   └── submission.routes.ts      # /api/submissions/*
 │   └── socket/
 │       └── battle.socket.ts          # All real-time Socket.io battle logic
-├── .env                              # Secret config — never commit this
+├── .env                              
 ├── .gitignore
 ├── tsconfig.json
 └── package.json
